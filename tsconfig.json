@@ -1,0 +1,10 @@
+{
+    "extends": "@tsconfig/node22/tsconfig.json",
+    "compilerOptions": {
+        "module": "Node16",
+        "declaration": true,
+        "outDir": "./dist",
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules"]
+}
