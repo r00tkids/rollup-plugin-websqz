@@ -5,7 +5,7 @@ const path = require("path");
 const os = require("os");
 
 const RELEASE_BASE_URL = "https://github.com/r00tkids/websqz/releases/download"; // Replace with your real release base URL
-const VERSION = "0.1"; // Replace with the release/version you want
+const VERSION = "0.2"; // Replace with the release/version you want
 const TOOL_NAME = "websqz"; // Replace with your binary base name
 const BIN_DIR = path.resolve(__dirname, "../dist/bin");
 
