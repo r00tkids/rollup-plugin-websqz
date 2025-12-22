@@ -10,7 +10,12 @@
     "prepublishOnly": "npm run build && npm run build:dts",
     "postinstall": "node scripts/install.js"
   },
-  "keywords": [],
+  "keywords": [
+    "rollup-plugin",
+    "vite-plugin",
+    "websqz",
+    "compression"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
