@@ -1,10 +1,10 @@
-import type { OutputAsset, OutputChunk, OutputOptions, Plugin } from "rollup";
+import { PluginContext, rollup, type OutputAsset, type OutputChunk, type OutputOptions, type Plugin } from "rollup";
 import querystring from "node:querystring";
-import { importFromString } from "module-from-string";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
 import child_process from "node:child_process";
+import { dataToEsm } from "@rollup/pluginutils";
 
 const removeEmptyEqualsRegex = /([?&])([^=&]+)=(&|$)/g;
 function removeEmptyEquals(query: string): string {
@@ -13,19 +13,50 @@ function removeEmptyEquals(query: string): string {
   });
 }
 
-const websqzPrefix = "\0websqz:";
-const websqzPrefixBin = "\0websqz-bin:";
-
 type WebSqzFile = {
   fileName: string;
-  content: Uint8Array;
+  content: Buffer;
   isCompressed: boolean;
   fileExt: string;
   isText: boolean;
 };
 
+export type WebsqzFileHookRes = {
+  /**
+   * The result of processing
+   */
+  content: Buffer;
+
+  /**
+   * Is already compressed and should not be compressed again by websqz
+   */
+  isCompressed: boolean;
+
+  /**
+   * Is it text? The plugin orders files by type for better compression ratios
+   */
+  isText: boolean;
+
+  /**
+   * File extension including the dot, e.g. .txt.
+   * This is used to order files for better compression ratios.
+   * Same type of content should share same file extension.
+   */
+  fileExt: string;
+};
+
 type WebSqzOptions = {
   websqzPath?: string;
+
+  /**
+   * Hooks to process files before they are imported in code or compressed by websqz
+   */
+  fileHooks?: [
+    {
+      filter: RegExp,
+      handler: (ctx: PluginContext, id: string, content: Buffer) => Promise<WebsqzFileHookRes>;
+    }
+  ]
 };
 
 type WebSqzCliOptions = {
@@ -90,12 +121,12 @@ function websqzExecutablePath(executablePath: string | undefined): string {
   return executablePath;
 }
 
-export default function (options: WebSqzOptions = {}, isBuild?: boolean): Plugin {
+export default function (options: WebSqzOptions = {}): Plugin {
+  const isBuild = process.env.NODE_ENV === "production";
   const websqzExePath = websqzExecutablePath(options.websqzPath);
   const websqzExe = new WebSqzExe(websqzExePath);
 
   const files = new Map<string, WebSqzFile>();
-  const isAlreadyCompressed = new Map<string, boolean>();
   let fileNameIdx = 0;
 
   const findNextAvailableFileName = () => {
@@ -116,138 +147,89 @@ export default function (options: WebSqzOptions = {}, isBuild?: boolean): Plugin
     return candidateName;
   }
 
+  const loadAndTransform = async function (plugin: PluginContext, id: string, hookRes: WebsqzFileHookRes) {
+    if (isBuild) {
+      const fileName = findNextAvailableFileName();
+      files.set(id, {
+        fileName,
+        content: hookRes.content,
+        isCompressed: hookRes.isCompressed,
+        fileExt: hookRes.fileExt,
+        isText: hookRes.isText,
+      });
+
+      return {
+        code: hookRes.isText 
+          ? `export default new TextDecoder().decode(wsqz.files["${fileName}"]);` 
+          : `export default wsqz.files["${fileName}"];`,
+        moduleSideEffects: false,
+        moduleType: 'js',
+      };
+    } else {
+      return {
+        code: hookRes.isText 
+          ? `export default ${JSON.stringify(hookRes.content.toString("utf-8"))};` 
+          : `export default Uint8Array.fromBase64("${hookRes.content.toString("base64")}");`,
+        moduleSideEffects: false,
+        moduleType: 'js',
+      };
+    }
+  };
+
   return {
     name: "rollup-plugin-websqz",
 
-    resolveId: {
+    load: {
       order: "pre",
-      handler: async function (
-        source: string,
-        importer: string | undefined,
-        options: any,
-      ) {
-        const beforeParams = source.slice(0, source.indexOf("?"));
-        const afterParams = source.slice(source.indexOf("?") + 1);
+      async handler(id: string) {
+        const qIdx = id.indexOf("?");
+        const beforeParams = id.slice(0, qIdx === -1 ? id.length : qIdx);
+        const afterParams = id.slice(id.indexOf("?") + 1);
         const parsed = querystring.parse(afterParams);
+        const cleanedUpId = beforeParams;
+
+        let cachedFile: Buffer | null = null;
+        const loadFromDisk = async () => {
+          if (cachedFile != null) {
+            return cachedFile;
+          }
+          cachedFile = await fs.readFile(cleanedUpId);
+          return cachedFile;
+        };
+
+        if (options.fileHooks) {
+          for (const hook of options.fileHooks) {
+            if (hook.filter.test(id)) {
+              let hookRes = await hook.handler(this, id, await loadFromDisk());
+              if (hookRes == null) {
+                continue;
+              }
+              return await loadAndTransform(this, id, hookRes);
+            }
+          }
+        }
 
         const isWebSqzTxt = parsed["websqz-txt"] != null;
         const isWebSqzBin = parsed["websqz-bin"] != null;
 
-        if (!isWebSqzTxt && !isWebSqzBin) {
-          return null;
-        }
-
         if (isWebSqzTxt && isWebSqzBin) {
           throw new Error(
-            `Cannot use both websqz-txt and websqz-bin on the same import: ${source}`,
+            `Cannot use both websqz-txt and websqz-bin on the same import: ${id}`,
           );
         }
 
         const isCompressed = parsed["compressed"] != null;
 
-        delete parsed["websqz-txt"];
-        delete parsed["websqz-bin"];
-        delete parsed["compressed"];
-
-        const cleanedUpSource = removeEmptyEquals(
-          beforeParams +
-          (Object.keys(parsed).length
-            ? "?" + querystring.stringify(parsed)
-            : "")
-        );
-
-        const resolution = await this.resolve(
-          cleanedUpSource,
-          importer,
-          options,
-        );
-
-        if (!resolution) {
-          throw new Error(
-            `Could not resolve ${cleanedUpSource} in ${importer}`,
-          );
-        }
-
-        if (isBuild) {
-          if (isAlreadyCompressed.get(resolution.id) === undefined) {
-            isAlreadyCompressed.set(resolution.id, isCompressed);
-          } else {
-            this.warn(
-              `The module '${resolution.id}' has been imported with both compressed and uncompressed options. Compressed = ${isAlreadyCompressed.get(resolution.id)} will be used.`,
-            );
-          }
-        }
-
-        if (isWebSqzTxt) {
-          if (isBuild) {
-            return websqzPrefix + resolution.id;
-          } else {
-            return resolution.id;
-          }
-        }
-        
-        if (isWebSqzBin) {
-          return websqzPrefixBin + resolution.id;
-        }
-      },
-    },
-
-    async load(id: string) {
-      if (id.startsWith(websqzPrefix)) {
-        const idWithoutPrefix = id.replace(websqzPrefix, "");
-        const fileName = findNextAvailableFileName();
-
-        this.debug(`Using file name '${fileName}' for module '${idWithoutPrefix}'`);
-
-        // We need to create temporary files with the content to pass to websqz
-        // since the content might have changed by other plugins as glslify
-        const moduleInfo = await this.load({ id: idWithoutPrefix });
-        const contentStr = (await importFromString(moduleInfo.code!))
-          .default;
-        if (
-          typeof contentStr !== "string" &&
-          !(contentStr instanceof String)
-        ) {
-          this.error(
-            {
-              message: `Expected a string from loading '${idWithoutPrefix}', but got ${typeof contentStr}. Try using '?raw' in the import instead.`,
-            },
-          );
-        }
-
-        let content = Buffer.from(contentStr, "utf-8");
-
-        files.set(idWithoutPrefix, {
-          fileName,
-          content: content,
-          isCompressed: isAlreadyCompressed.get(idWithoutPrefix) || false,
-          fileExt: path.extname(idWithoutPrefix),
-          isText: true,
-        });
-
-        return `export default new TextDecoder().decode(wsqz.files["${fileName}"]);`;
-      }
-
-      if (id.startsWith(websqzPrefixBin)) {
-        const idWithoutPrefix = id.replace(websqzPrefixBin, "");
-
-        if (isBuild) {
-          const data = await fs.readFile(idWithoutPrefix);
-          const fileName = findNextAvailableFileName();
-          this.debug(`Using file name '${fileName}' for module '${idWithoutPrefix}'`);
-
-          files.set(idWithoutPrefix, {
-            fileName,
-            content: data,
-            isCompressed: isAlreadyCompressed.get(idWithoutPrefix) || false,
-            fileExt: path.extname(idWithoutPrefix),
-            isText: false,
-          });
-          return `export default wsqz.files["${fileName}"];`;
-        } else {
-          const data = await fs.readFile(idWithoutPrefix);
-
-          return `export default Uint8Array.fromBase64("${data.toString("base64")}");`;
+        if (isWebSqzTxt || isWebSqzBin) {
+          const content = await loadFromDisk();
+          
+          let hookRes: WebsqzFileHookRes = {
+            content,
+            isCompressed,
+            isText: isWebSqzTxt,
+            fileExt: path.extname(cleanedUpId),
+          };
+          return await loadAndTransform(this, id, hookRes);
         }
       }
     },

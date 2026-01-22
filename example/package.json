@@ -10,9 +10,11 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.14.0",
-  "dependencies": {},
   "devDependencies": {
-    "vite": "^7.0.6",
-    "vite-plugin-glsl": "^1.5.1"
+    "vite": "^7.3.1",
+    "vite-plugin-glsl": "^1.5.5"
+  },
+  "dependencies": {
+    "module-from-string": "^3.3.1"
   }
 }

@@ -5,7 +5,7 @@ const path = require("path");
 const os = require("os");
 
 const RELEASE_BASE_URL = "https://github.com/r00tkids/websqz/releases/download";
-const VERSION = "0.2";
+const VERSION = "0.3";
 const TOOL_NAME = "websqz";
 const BIN_DIR = path.resolve(__dirname, "../dist/bin");
 
@@ -145,6 +145,11 @@ async function main() {
     console.log(`Detected platform: ${process.platform} ${process.arch}`);
     console.log(`Downloading asset: ${assetName}`);
     console.log(`From: ${url}`);
+
+    if (fs.existsSync(BIN_DIR + "/" + TOOL_NAME + ext)) {
+      console.log(`WebSQZ binary already exists at ${BIN_DIR}/${TOOL_NAME}${ext}, skipping download.`);
+      return;
+    }
 
     await ensureBinDir();
 

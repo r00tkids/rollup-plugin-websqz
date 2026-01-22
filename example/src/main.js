@@ -1,19 +1,19 @@
-import frag from "./frag.glsl?websqz-txt";
+import frag from "./frag.glsl";
 import binary from "./rand.bin?websqz-bin";
-import test from "./test.json?websqz-txt&raw";
-
-console.log("Test JSON:", test);
-//import binaryCompressed from "./rand.bin?websqz-bin&compressed";
-//import shaderCompressed from "./frag.glsl?websqz-txt&compressed";
+import json from "./test.json?websqz-txt&raw";
+import websqzJpg from "./websqz.jpg?websqz-bin&compressed&raw";
 
 if (import.meta.hot) {
-  import.meta.hot.accept("./frag.glsl?websqz-txt", (newFrag) => {
-    // the callback receives the updated './frag.glsl?websqz-txt' module
-    console.log(newFrag?.default);
+  import.meta.hot.accept(["./frag.glsl", "./rand.bin?websqz-bin", "./test.json?websqz-txt&raw"], (modules) => {
+    for (const mod of modules) {
+      if (!mod) continue; // module not updated
+      console.log("HMR update:", mod.default);
+    }
   });
 }
 
+
 console.log("Fragment Shader:", frag);
-//console.log("Shader compressed:", shaderCompressed);
 console.log("Binary Data:", binary);
-//console.log("Binary Data Compressed:", binaryCompressed);
+console.log("Test JSON:", json);
+console.log("WebSQZ JPG Data (already compressed):", websqzJpg);
