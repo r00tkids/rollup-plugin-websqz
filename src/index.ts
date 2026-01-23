@@ -4,14 +4,7 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
 import child_process from "node:child_process";
-import { dataToEsm } from "@rollup/pluginutils";
-
-const removeEmptyEqualsRegex = /([?&])([^=&]+)=(&|$)/g;
-function removeEmptyEquals(query: string): string {
-  return query.replace(removeEmptyEqualsRegex, (match, sep, key, end) => {
-    return end === '&' ? `${sep}${key}&` : `${sep}${key}`;
-  });
-}
+import { createFilter, FilterPattern } from "@rollup/pluginutils";
 
 type WebSqzFile = {
   fileName: string;
@@ -21,7 +14,7 @@ type WebSqzFile = {
   isText: boolean;
 };
 
-export type WebsqzFileHookRes = {
+export type WebsqzFileTransformRes = {
   /**
    * The result of processing
    */
@@ -41,20 +34,23 @@ export type WebsqzFileHookRes = {
    * File extension including the dot, e.g. .txt.
    * This is used to order files for better compression ratios.
    * Same type of content should share same file extension.
+   * 
+   * By default it is extracted from the original file path.
    */
-  fileExt: string;
+  fileExt?: string;
 };
 
 type WebSqzOptions = {
   websqzPath?: string;
 
   /**
-   * Hooks to process files before they are imported in code or compressed by websqz
+   * File transform hooks to process files before they are imported in code or compressed by websqz
    */
-  fileHooks?: [
+  fileTransforms?: [
     {
-      filter: RegExp,
-      handler: (ctx: PluginContext, id: string, content: Buffer) => Promise<WebsqzFileHookRes>;
+      include?: FilterPattern,
+      exclude?: FilterPattern,
+      transform: (ctx: PluginContext, id: string, content: Buffer) => Promise<WebsqzFileTransformRes>;
     }
   ]
 };
@@ -126,6 +122,19 @@ export default function (options: WebSqzOptions = {}): Plugin {
   const websqzExePath = websqzExecutablePath(options.websqzPath);
   const websqzExe = new WebSqzExe(websqzExePath);
 
+  const fileTransforms = options.fileTransforms?.map(transform => {
+    const include = transform.include ? (Array.isArray(transform.include) ? transform.include : [transform.include]) 
+      : undefined;
+    const exclude = transform.exclude ? (Array.isArray(transform.exclude) ? transform.exclude : [transform.exclude]) 
+      : undefined;
+
+    const filter = createFilter(include, exclude);
+    return {
+      transform: transform.transform,
+      filter,
+    }
+  });
+
   const files = new Map<string, WebSqzFile>();
   let fileNameIdx = 0;
 
@@ -147,14 +156,14 @@ export default function (options: WebSqzOptions = {}): Plugin {
     return candidateName;
   }
 
-  const loadAndTransform = async function (plugin: PluginContext, id: string, hookRes: WebsqzFileHookRes) {
+  const loadAndTransform = async function (id: string, hookRes: WebsqzFileTransformRes) {
     if (isBuild) {
       const fileName = findNextAvailableFileName();
       files.set(id, {
         fileName,
         content: hookRes.content,
         isCompressed: hookRes.isCompressed,
-        fileExt: hookRes.fileExt,
+        fileExt: hookRes.fileExt ?? path.extname(id),
         isText: hookRes.isText,
       });
 
@@ -197,14 +206,14 @@ export default function (options: WebSqzOptions = {}): Plugin {
           return cachedFile;
         };
 
-        if (options.fileHooks) {
-          for (const hook of options.fileHooks) {
-            if (hook.filter.test(id)) {
-              let hookRes = await hook.handler(this, id, await loadFromDisk());
+        if (fileTransforms) {
+          for (const transform of fileTransforms) {
+            if (transform.filter(id)) {
+              let hookRes = await transform.transform(this, id, await loadFromDisk());
               if (hookRes == null) {
                 continue;
               }
-              return await loadAndTransform(this, id, hookRes);
+              return await loadAndTransform(id, hookRes);
             }
           }
         }
@@ -223,13 +232,13 @@ export default function (options: WebSqzOptions = {}): Plugin {
         if (isWebSqzTxt || isWebSqzBin) {
           const content = await loadFromDisk();
           
-          let hookRes: WebsqzFileHookRes = {
+          let hookRes: WebsqzFileTransformRes = {
             content,
             isCompressed,
             isText: isWebSqzTxt,
             fileExt: path.extname(cleanedUpId),
           };
-          return await loadAndTransform(this, id, hookRes);
+          return await loadAndTransform(id, hookRes);
         }
       }
     },

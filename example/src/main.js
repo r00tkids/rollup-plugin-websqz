@@ -12,7 +12,6 @@ if (import.meta.hot) {
   });
 }
 
-
 console.log("Fragment Shader:", frag);
 console.log("Binary Data:", binary);
 console.log("Test JSON:", json);

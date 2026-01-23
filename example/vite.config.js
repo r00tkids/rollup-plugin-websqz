@@ -15,10 +15,10 @@ export default defineConfig({
     },
     plugins: [
         websqz({
-            fileHooks: [
+            fileTransforms: [
                 {
-                    filter: /\.glsl$/,
-                    handler: async (ctx, id, content) => {
+                    include: [/\.glsl$/, "*.frag", "*.vert"],
+                    transform: async (ctx, id, content) => {
                         // The GLSL plugin doesn't have a simple interface to call it directly,
                         // so we use importFromString to leverage its existing Vite loader...
                         // THIS IS UNSAFE AND THE FILE LOADED CAN POTENTIALLY EXECUTE ARBITRARY CODE!

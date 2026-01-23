@@ -2,7 +2,14 @@
   "name": "rollup-plugin-websqz",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": "./dist/index.js",
+  "files": [
+    "scripts/install.js",
+    "dist",
+    "LICENSE.md"
+  ],
   "scripts": {
     "build": "rollup -c",
     "build:watch": "rollup -c -w",
