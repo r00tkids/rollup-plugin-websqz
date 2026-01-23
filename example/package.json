@@ -15,6 +15,7 @@
     "vite-plugin-glsl": "^1.5.5"
   },
   "dependencies": {
-    "module-from-string": "^3.3.1"
+    "module-from-string": "^3.3.1",
+    "rollup-plugin-websqz": "link:.."
   }
 }
