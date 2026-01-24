@@ -16,12 +16,18 @@ export default defineConfig({
 });
 ```
 
-See the [example](./example) for a working example with support for `vite-plugin-glsl`.
+See the [example](https://github.com/r00tkids/rollup-plugin-websqz/tree/main/example) for a working example with support for `vite-plugin-glsl`.
 
 ## Example Options
 ```js
 websqz({
-    websqzPath: null, // It's resolved to the websqz executable installed when installing the npm package, else it'll try to execute based on $PATH
+    /*
+    Full path to the websqz executable.
+    If null (default), the plugin uses the websqz executable
+    installed by running step 2 in the Install section.
+    Otherwise it will try to resolve websqz from your system PATH.
+    */
+    websqzPath: null,
     fileHooks: [
         {
             filter: /\.glsl$/,
