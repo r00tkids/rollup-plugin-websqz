@@ -27,9 +27,9 @@ websqz({
     Otherwise it will try to resolve websqz from your system PATH.
     */
     websqzPath: null,
-    fileHooks: [
+    fileTransforms: [
         {
-            filter: /\.glsl$/,
+            include: /\.glsl$/,
             transform: async (ctx, id, content) => {
                 return {
                     content: Buffer.from("Hello World", "utf-8"),
