@@ -1,20 +1,21 @@
 {
   "name": "rollup-plugin-websqz",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": "./dist/index.js",
   "files": [
     "scripts/install.js",
-    "dist",
-    "LICENSE"
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts"
   ],
   "scripts": {
     "build": "rollup -c",
     "build:watch": "rollup -c -w",
     "build:dts": "tsc --emitDeclarationOnly",
-    "prepublishOnly": "rm -rf dist && npm run build && npm run build:dts",
+    "prepublishOnly": "npm run build && npm run build:dts",
     "postinstall": "node scripts/install.js"
   },
   "keywords": [
