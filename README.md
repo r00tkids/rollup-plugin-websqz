@@ -2,8 +2,7 @@
 Rollup / Vite plugin for using [websqz](https://github.com/r00tkids/websqz) to compress and bundle code and assets into one HTML file. This is intented for intros in the [demoscene](https://en.wikipedia.org/wiki/Demoscene) or size restricted JS challenges.
 
 ## Install
-1. `npm i rollup-plugin-websqz` 
-2. `node ./node_modules/rollup-plugin-websqz/scripts/install.js` to install the pre-built websqz executable from https://github.com/r00tkids/websqz
+`npm i rollup-plugin-websqz`
 
 ## Usage
 ```js
@@ -24,7 +23,7 @@ websqz({
     /*
     Full path to the websqz executable.
     If null (default), the plugin uses the websqz executable
-    installed by running step 2 in the Install section.
+    installed when installing the npm package.
     Otherwise it will try to resolve websqz from your system PATH.
     */
     websqzPath: null,

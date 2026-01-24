@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-websqz",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,7 +14,8 @@
     "build": "rollup -c",
     "build:watch": "rollup -c -w",
     "build:dts": "tsc --emitDeclarationOnly",
-    "prepublishOnly": "npm run build && npm run build:dts"
+    "prepublishOnly": "rm -rf dist && npm run build && npm run build:dts",
+    "postinstall": "node scripts/install.js"
   },
   "keywords": [
     "rollup-plugin",
