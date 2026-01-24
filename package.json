@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-websqz",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -8,7 +8,7 @@
   "files": [
     "scripts/install.js",
     "dist",
-    "LICENSE.md"
+    "LICENSE"
   ],
   "scripts": {
     "build": "rollup -c",
@@ -23,7 +23,11 @@
     "compression"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/r00tkids/rollup-plugin-websqz.git"
+  },
   "dependencies": {
     "@rollup/pluginutils": "^5.3.0",
     "tslib": "^2.8.1"
