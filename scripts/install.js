@@ -5,7 +5,7 @@ const path = require("path");
 const os = require("os");
 
 const RELEASE_BASE_URL = "https://github.com/r00tkids/websqz/releases/download";
-const VERSION = "0.3";
+const VERSION = "0.4";
 const TOOL_NAME = "websqz";
 const BIN_DIR = path.resolve(__dirname, "../dist/bin");
 
