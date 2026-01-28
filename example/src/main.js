@@ -15,5 +15,10 @@ if (import.meta.hot) {
 
 console.log("Fragment Shader:", frag);
 console.log("Binary Data:", binary);
-console.log("WebSQZ JPG Data (already compressed):", websqzJpg);
 console.log("Test JSON:", json);
+
+let blob = new Blob([websqzJpg], { type: 'image/jpeg' });
+let url = URL.createObjectURL(blob);
+let img = document.createElement('img');
+img.src = url;
+document.body.appendChild(img);
