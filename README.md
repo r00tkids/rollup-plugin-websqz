@@ -1,4 +1,6 @@
 # rollup-plugin-websqz
+![NPM Version](https://img.shields.io/npm/v/rollup-plugin-websqz)
+
 Rollup / Vite plugin for using [websqz](https://github.com/r00tkids/websqz) to compress and bundle code and assets into one HTML file. This is intented for intros in the [demoscene](https://en.wikipedia.org/wiki/Demoscene) or size restricted JS challenges.
 
 ## Install
