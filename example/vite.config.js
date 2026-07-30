@@ -17,7 +17,7 @@ export default defineConfig({
         websqz({
             fileTransforms: [
                 {
-                    include: [/\.glsl$/, "*.frag", "*.vert"],
+                    include: [/\.glsl$/, /\.frag$/, /\.vert$/],
                     transform: async (ctx, id, content) => {
                         // The GLSL plugin doesn't have a simple interface to call it directly,
                         // so we use importFromString to leverage its existing Vite loader...
