@@ -2,6 +2,7 @@ import typescript from '@rollup/plugin-typescript';
 const config = [
     {
         input: 'src/index.ts',
+        external: ['@rollup/pluginutils', /^node:.*/],
         output: {
             dir: 'dist',
             format: 'esm',

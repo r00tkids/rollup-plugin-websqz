@@ -1,9 +1,12 @@
 {
     "extends": "@tsconfig/node22/tsconfig.json",
     "compilerOptions": {
-        "module": "Node16",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
         "declaration": true,
-        "outDir": "./dist",
+        "rootDir": "./src",
+        "declarationDir": "./dist",
+        "types": ["node"]
     },
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules"]

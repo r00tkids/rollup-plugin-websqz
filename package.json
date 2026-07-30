@@ -1,12 +1,13 @@
 {
   "name": "rollup-plugin-websqz",
-  "version": "1.0.6",
+  "version": "1.1.0",
+  "type": "module",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": "./dist/index.js",
   "files": [
-    "scripts/install.js",
+    "scripts/install.cj",
     "dist/index.js",
     "dist/index.js.map",
     "dist/index.d.ts"
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.3.0",
     "@tsconfig/node22": "^22.0.5",
+    "@types/node": "^26.0.0",
     "rollup": "^4.55.3",
     "typescript": "^5.9.3"
   }

@@ -261,7 +261,7 @@ export default function (options: WebSqzOptions = {}): Plugin {
             outputOptions.dir || "",
             "websqz-tmp");
         if (await fs.stat(outDir).catch(() => false)) {
-          await fs.rmdir(outDir, { recursive: true });
+          await fs.rm(outDir, { recursive: true, force: true });
         }
 
         const filesToCompress = [];
