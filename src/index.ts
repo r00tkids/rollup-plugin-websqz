@@ -104,7 +104,7 @@ class WebSqzExe {
 
 function websqzExecutablePath(executablePath: string | undefined): string {
   if (!executablePath) {
-    const path = __dirname + "/bin/websqz";
+    const path = import.meta.dirname + "/bin/websqz";
     const extension = process.platform == "win32" ? ".exe" : "";
 
     if (fsSync.existsSync(path + extension)) {
