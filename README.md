@@ -1,3 +1,5 @@
+** DEPRECATED IN FAVOUR OF https://github.com/r00tkids/rootsqz/tree/main/packages/rollup-plugin-rootsqz **
+
 # rollup-plugin-websqz
 ![NPM Version](https://img.shields.io/npm/v/rollup-plugin-websqz)
 
